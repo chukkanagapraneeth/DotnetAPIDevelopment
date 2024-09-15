@@ -24,6 +24,8 @@ namespace DotnetAPI.Controllers
                 new MapperConfiguration(cfg =>
                 {
                     cfg.CreateMap<UserToAddDTO, Users>();
+                    cfg.CreateMap<UserJobInfo, UserJobInfo>().ReverseMap();
+                    cfg.CreateMap<UserSalary, UserSalary>().ReverseMap();
                 })
             );
         }
@@ -102,7 +104,117 @@ namespace DotnetAPI.Controllers
             throw new Exception("Unable to find the user.");
         }
 
-        static string EscapeSingleQuote(string input)
+        [HttpGet("UserSalary/{userId}")]
+        public IEnumerable<UserSalary> GetUserSalaryEF(int userId)
+        {
+            return _efCore.UserSalary.Where(u => u.UserId == userId).ToList();
+        }
+
+        [HttpPost("UserSalary")]
+        public IActionResult PostUserSalaryEf(UserSalary userForInsert)
+        {
+            _efCore.UserSalary.Add(userForInsert);
+            if (_efCore.SaveChanges() > 0)
+            {
+                return Ok();
+            }
+            throw new Exception("Adding UserSalary failed on save");
+        }
+
+        [HttpPut("UserSalary")]
+        public IActionResult PutUserSalaryEf(UserSalary userForUpdate)
+        {
+            UserSalary? userToUpdate = _efCore
+                .UserSalary.Where(u => u.UserId == userForUpdate.UserId)
+                .FirstOrDefault();
+
+            if (userToUpdate != null)
+            {
+                _mapper.Map(userForUpdate, userToUpdate);
+                if (_efCore.SaveChanges() > 0)
+                {
+                    return Ok();
+                }
+                throw new Exception("Updating UserSalary failed on save");
+            }
+            throw new Exception("Failed to find UserSalary to Update");
+        }
+
+        [HttpDelete("UserSalary/{userId}")]
+        public IActionResult DeleteUserSalaryEf(int userId)
+        {
+            UserSalary? userToDelete = _efCore
+                .UserSalary.Where(u => u.UserId == userId)
+                .FirstOrDefault();
+
+            if (userToDelete != null)
+            {
+                _efCore.UserSalary.Remove(userToDelete);
+                if (_efCore.SaveChanges() > 0)
+                {
+                    return Ok();
+                }
+                throw new Exception("Deleting UserSalary failed on save");
+            }
+            throw new Exception("Failed to find UserSalary to delete");
+        }
+
+        [HttpGet("UserJobInfo/{userId}")]
+        public IEnumerable<UserJobInfo> GetUserJobInfoEF(int userId)
+        {
+            return _efCore.UserJobInfo.Where(u => u.UserId == userId).ToList();
+        }
+
+        [HttpPost("UserJobInfo")]
+        public IActionResult PostUserJobInfoEf(UserJobInfo userForInsert)
+        {
+            _efCore.UserJobInfo.Add(userForInsert);
+            if (_efCore.SaveChanges() > 0)
+            {
+                return Ok();
+            }
+            throw new Exception("Adding UserJobInfo failed on save");
+        }
+
+        [HttpPut("UserJobInfo")]
+        public IActionResult PutUserJobInfoEf(UserJobInfo userForUpdate)
+        {
+            UserJobInfo? userToUpdate = _efCore
+                .UserJobInfo.Where(u => u.UserId == userForUpdate.UserId)
+                .FirstOrDefault();
+
+            if (userToUpdate != null)
+            {
+                _mapper.Map(userForUpdate, userToUpdate);
+                if (_efCore.SaveChanges() > 0)
+                {
+                    return Ok();
+                }
+                throw new Exception("Updating UserJobInfo failed on save");
+            }
+            throw new Exception("Failed to find UserJobInfo to Update");
+        }
+
+        [HttpDelete("UserJobInfo/{userId}")]
+        public IActionResult DeleteUserJobInfoEf(int userId)
+        {
+            UserJobInfo? userToDelete = _efCore
+                .UserJobInfo.Where(u => u.UserId == userId)
+                .FirstOrDefault();
+
+            if (userToDelete != null)
+            {
+                _efCore.UserJobInfo.Remove(userToDelete);
+                if (_efCore.SaveChanges() > 0)
+                {
+                    return Ok();
+                }
+                throw new Exception("Deleting UserJobInfo failed on save");
+            }
+            throw new Exception("Failed to find UserJobInfo to delete");
+        }
+
+        public static string EscapeSingleQuote(string input)
         {
             string output = input.Replace("'", "''");
 
