@@ -73,3 +73,4 @@ D:\CSharpProjs\DTripodiUdemy\DotnetAPI\bin\Debug\net8.0\Microsoft.EntityFramewor
 D:\CSharpProjs\DTripodiUdemy\DotnetAPI\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Abstractions.dll
 D:\CSharpProjs\DTripodiUdemy\DotnetAPI\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Relational.dll
 D:\CSharpProjs\DTripodiUdemy\DotnetAPI\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.SqlServer.dll
+D:\CSharpProjs\DTripodiUdemy\DotnetAPI\obj\Debug\net8.0\DotnetAPI.sourcelink.json

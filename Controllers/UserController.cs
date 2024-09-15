@@ -115,7 +115,74 @@ namespace DotnetAPI.Controllers
             throw new Exception("Unable to delete user");
         }
 
-        static string EscapeSingleQuote(string input)
+        // User Job Info Endpoints
+
+        [HttpGet("UserJobInfo")]
+        public IEnumerable<UserJobInfo> GetUserJobInfo()
+        {
+            string sql = $"SELECT * FROM TutorialAppSchema.UserJobInfo";
+            return _dapper.LoadData<UserJobInfo>(sql);
+        }
+
+        [HttpGet("UserJobInfo/{UserId}")]
+        public UserJobInfo GetUserJobInfo(int UserId)
+        {
+            string sql = @$"SELECT * FROM TutorialAppSchema.UserJobInfo WHERE UserId = {UserId} ";
+            return _dapper.LoadDataSingle<UserJobInfo>(sql);
+        }
+
+        [HttpPut("EditUserJobInfo")]
+        public IActionResult PutUserJobInfo(UserJobInfo userjobinfo)
+        {
+            string sql =
+                @$"UPDATE TutorialAppSchema.UserJobInfo SET [JobTitle] = '{userjobinfo.JobTitle}', [Department] = '{userjobinfo.Department}' WHERE UserId = {userjobinfo.UserId}";
+            int effectedRows;
+            Console.WriteLine(sql);
+            var x = _dapper.ExecuteSql(sql, out effectedRows);
+            Console.WriteLine(effectedRows);
+            if (x)
+            {
+                return Ok();
+            }
+            throw new Exception("Didn't change nothing.");
+        }
+
+        [HttpPost("AddUserJobInfo")]
+        public IActionResult AddUserJobInfo(UserJobInfo userjobinfo)
+        {
+            string sql =
+                $@"
+                INSERT INTO TutorialAppSchema.UserJobInfo(
+                        [UserId],
+                        [JobTitle],
+                        [Department]                
+                    ) VALUES(
+                        '{userjobinfo.UserId}',
+                        '{userjobinfo.JobTitle}',
+                        '{userjobinfo.Department}'
+                    )
+            ";
+            Console.WriteLine(sql);
+            if (_dapper.ExecuteSql(sql))
+            {
+                return Ok();
+            }
+            throw new Exception("Didn't add the user");
+        }
+
+        [HttpDelete("DeleteUserJobInfo/{UserId}")]
+        public IActionResult DeleteUserJobInfo(int UserId)
+        {
+            string sql =
+                @$"DELETE FROM TutorialAppSchema.UserJobInfo WHERE UserId = {UserId.ToString()}";
+            if (_dapper.ExecuteSql(sql))
+            {
+                return Ok();
+            }
+            throw new Exception("Unable to Delete the User");
+        }
+
+        public static string EscapeSingleQuote(string input)
         {
             string output = input.Replace("'", "''");
 
