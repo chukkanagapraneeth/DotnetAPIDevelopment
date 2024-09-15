@@ -182,6 +182,60 @@ namespace DotnetAPI.Controllers
             throw new Exception("Unable to Delete the User");
         }
 
+        // User Salary Endpoints
+
+        [HttpGet("GetUserSalary/{UserId}")]
+        public UserSalary GetUserSalary(int UserId)
+        {
+            string sql = @$"SELECT * FROM TutorialAppSchema.UserSalary WHERE UserId = {UserId}";
+            return _dapper.LoadDataSingle<UserSalary>(sql);
+        }
+
+        [HttpPut("EditUserSalary")]
+        public IActionResult EditUserSalary(UserSalary userSalary)
+        {
+            string sql =
+                @$"UPDATE TutorialAppSchema.UserSalary SET [Salary] = '{userSalary.Salary}', [AvgSalary] = '{userSalary.AvgSalary}' WHERE UserId = '{userSalary.UserId.ToString()}'";
+            if (_dapper.ExecuteSql(sql))
+            {
+                return Ok(userSalary);
+            }
+            throw new Exception("Updating User Salary failed on save");
+        }
+
+        [HttpDelete("DeleteUserSalary/{UserId}")]
+        public IActionResult DeleteUserSalary(int UserId)
+        {
+            string sql =
+                @$"DELETE FROM TutorialAppSchema.UserSalary WHERE UserId = {UserId.ToString()}";
+            if (_dapper.ExecuteSql(sql))
+            {
+                return Ok();
+            }
+            throw new Exception("Unable to Delete the record.");
+        }
+
+        [HttpPost("AddUserSalary")]
+        public IActionResult AddUserSalary(UserSalary userSalaryForInsert)
+        {
+            string sql =
+                @"
+            INSERT INTO TutorialAppSchema.UserSalary (
+                UserId,
+                Salary
+            ) VALUES ("
+                + userSalaryForInsert.UserId.ToString()
+                + ", "
+                + userSalaryForInsert.Salary
+                + ")";
+
+            if (_dapper.ExecuteSql(sql))
+            {
+                return Ok(userSalaryForInsert);
+            }
+            throw new Exception("Adding User Salary failed on save");
+        }
+
         public static string EscapeSingleQuote(string input)
         {
             string output = input.Replace("'", "''");
