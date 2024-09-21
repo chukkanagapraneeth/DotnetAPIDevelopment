@@ -14,14 +14,12 @@ namespace DotnetAPI.Controllers
     [Route("[controller]")]
     public class UserEFController : ControllerBase
     {
-        private DataContextEFCore _efCore;
         private IMapper _mapper;
 
         private IUserRepository _userRepository;
 
-        public UserEFController(IConfiguration config, IUserRepository userRepository)
+        public UserEFController(IUserRepository userRepository)
         {
-            _efCore = new DataContextEFCore(config);
             _mapper = new Mapper(
                 new MapperConfiguration(cfg =>
                 {
@@ -92,7 +90,7 @@ namespace DotnetAPI.Controllers
         [HttpDelete("DeleteUser/{UserId}")]
         public IActionResult DeleteUser(int UserId)
         {
-            Users? userDb = _efCore.Users.Where(x => x.UserId == UserId).FirstOrDefault<Users>();
+            Users? userDb = _userRepository.GetSingleUser(UserId);
             if (userDb != null)
             {
                 _userRepository.RemoveEntity<Users>(userDb);
