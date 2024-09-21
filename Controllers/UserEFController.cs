@@ -17,7 +17,9 @@ namespace DotnetAPI.Controllers
         private DataContextEFCore _efCore;
         private IMapper _mapper;
 
-        public UserEFController(IConfiguration config)
+        private IUserRepository _userRepository;
+
+        public UserEFController(IConfiguration config, IUserRepository userRepository)
         {
             _efCore = new DataContextEFCore(config);
             _mapper = new Mapper(
@@ -28,12 +30,13 @@ namespace DotnetAPI.Controllers
                     cfg.CreateMap<UserSalary, UserSalary>().ReverseMap();
                 })
             );
+            _userRepository = userRepository;
         }
 
         [HttpGet("GetUsers/{UserId}")]
         public Users GetSingleUser(int UserId)
         {
-            Users? user = _efCore.Users.Where(x => x.UserId == UserId).FirstOrDefault<Users>();
+            Users? user = _userRepository.GetSingleUser(UserId);
             if (user != null)
             {
                 return user;
@@ -44,7 +47,7 @@ namespace DotnetAPI.Controllers
         [HttpGet("GetUsers")]
         public IEnumerable<Users> GetUsers()
         {
-            return _efCore.Users.ToList<Users>();
+            return _userRepository.GetUsers();
         }
 
         [HttpPut("EditUser")]
@@ -53,9 +56,7 @@ namespace DotnetAPI.Controllers
             string firstname = EscapeSingleQuote(user.FirstName);
             string lastname = EscapeSingleQuote(user.LastName);
 
-            Users? userDb = _efCore
-                .Users.Where(x => x.UserId == user.UserId)
-                .FirstOrDefault<Users>();
+            Users? userDb = _userRepository.GetSingleUser(user.UserId);
             if (userDb != null)
             {
                 userDb.FirstName = firstname;
@@ -63,7 +64,7 @@ namespace DotnetAPI.Controllers
                 userDb.Active = user.Active;
                 userDb.Email = user.Email;
                 userDb.Gender = user.Gender;
-                if (_efCore.SaveChanges() > 0)
+                if (_userRepository.SaveChanges())
                 {
                     return Ok();
                 }
@@ -80,8 +81,8 @@ namespace DotnetAPI.Controllers
 
             Users userDb = _mapper.Map<Users>(user);
 
-            _efCore.Add(userDb);
-            if (_efCore.SaveChanges() > 0)
+            _userRepository.AddEntity<Users>(userDb);
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -94,8 +95,8 @@ namespace DotnetAPI.Controllers
             Users? userDb = _efCore.Users.Where(x => x.UserId == UserId).FirstOrDefault<Users>();
             if (userDb != null)
             {
-                _efCore.Users.Remove(userDb);
-                if (_efCore.SaveChanges() > 0)
+                _userRepository.RemoveEntity<Users>(userDb);
+                if (_userRepository.SaveChanges())
                 {
                     return Ok();
                 }
@@ -105,16 +106,16 @@ namespace DotnetAPI.Controllers
         }
 
         [HttpGet("UserSalary/{userId}")]
-        public IEnumerable<UserSalary> GetUserSalaryEF(int userId)
+        public UserSalary GetUserSalaryEF(int userId)
         {
-            return _efCore.UserSalary.Where(u => u.UserId == userId).ToList();
+            return _userRepository.GetSingleUserSalary(userId);
         }
 
         [HttpPost("UserSalary")]
         public IActionResult PostUserSalaryEf(UserSalary userForInsert)
         {
-            _efCore.UserSalary.Add(userForInsert);
-            if (_efCore.SaveChanges() > 0)
+            _userRepository.AddEntity<UserSalary>(userForInsert);
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -124,14 +125,12 @@ namespace DotnetAPI.Controllers
         [HttpPut("UserSalary")]
         public IActionResult PutUserSalaryEf(UserSalary userForUpdate)
         {
-            UserSalary? userToUpdate = _efCore
-                .UserSalary.Where(u => u.UserId == userForUpdate.UserId)
-                .FirstOrDefault();
+            UserSalary? userToUpdate = _userRepository.GetSingleUserSalary(userForUpdate.UserId);
 
             if (userToUpdate != null)
             {
                 _mapper.Map(userForUpdate, userToUpdate);
-                if (_efCore.SaveChanges() > 0)
+                if (_userRepository.SaveChanges())
                 {
                     return Ok();
                 }
@@ -143,14 +142,12 @@ namespace DotnetAPI.Controllers
         [HttpDelete("UserSalary/{userId}")]
         public IActionResult DeleteUserSalaryEf(int userId)
         {
-            UserSalary? userToDelete = _efCore
-                .UserSalary.Where(u => u.UserId == userId)
-                .FirstOrDefault();
+            UserSalary? userToDelete = _userRepository.GetSingleUserSalary(userId);
 
             if (userToDelete != null)
             {
-                _efCore.UserSalary.Remove(userToDelete);
-                if (_efCore.SaveChanges() > 0)
+                _userRepository.RemoveEntity<UserSalary>(userToDelete);
+                if (_userRepository.SaveChanges())
                 {
                     return Ok();
                 }
@@ -160,16 +157,16 @@ namespace DotnetAPI.Controllers
         }
 
         [HttpGet("UserJobInfo/{userId}")]
-        public IEnumerable<UserJobInfo> GetUserJobInfoEF(int userId)
+        public UserJobInfo GetUserJobInfoEF(int userId)
         {
-            return _efCore.UserJobInfo.Where(u => u.UserId == userId).ToList();
+            return _userRepository.GetSingleUserJobInfo(userId);
         }
 
         [HttpPost("UserJobInfo")]
         public IActionResult PostUserJobInfoEf(UserJobInfo userForInsert)
         {
-            _efCore.UserJobInfo.Add(userForInsert);
-            if (_efCore.SaveChanges() > 0)
+            _userRepository.AddEntity<UserJobInfo>(userForInsert);
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -179,14 +176,12 @@ namespace DotnetAPI.Controllers
         [HttpPut("UserJobInfo")]
         public IActionResult PutUserJobInfoEf(UserJobInfo userForUpdate)
         {
-            UserJobInfo? userToUpdate = _efCore
-                .UserJobInfo.Where(u => u.UserId == userForUpdate.UserId)
-                .FirstOrDefault();
+            UserJobInfo? userToUpdate = _userRepository.GetSingleUserJobInfo(userForUpdate.UserId);
 
             if (userToUpdate != null)
             {
                 _mapper.Map(userForUpdate, userToUpdate);
-                if (_efCore.SaveChanges() > 0)
+                if (_userRepository.SaveChanges())
                 {
                     return Ok();
                 }
@@ -198,14 +193,12 @@ namespace DotnetAPI.Controllers
         [HttpDelete("UserJobInfo/{userId}")]
         public IActionResult DeleteUserJobInfoEf(int userId)
         {
-            UserJobInfo? userToDelete = _efCore
-                .UserJobInfo.Where(u => u.UserId == userId)
-                .FirstOrDefault();
+            UserJobInfo? userToDelete = _userRepository.GetSingleUserJobInfo(userId);
 
             if (userToDelete != null)
             {
-                _efCore.UserJobInfo.Remove(userToDelete);
-                if (_efCore.SaveChanges() > 0)
+                _userRepository.RemoveEntity<UserJobInfo>(userToDelete);
+                if (_userRepository.SaveChanges())
                 {
                     return Ok();
                 }
