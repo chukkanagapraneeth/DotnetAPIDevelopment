@@ -86,7 +86,28 @@ namespace DotnetAPI.Controllers
         [HttpPost("Login")]
         public IActionResult Login(UserForLoginDto userForLogin)
         {
-            return Ok();
+            string sqlUserCheck =
+                @$"SELECT [PasswordSalt], [PasswordHash] FROM TutorialAppSchema.Auth 
+            WHERE Email = '{userForLogin.Email}'";
+
+            IEnumerable<UserForLoginConfirmationDto> userForLoginConfirmationdto =
+                _dapper.LoadData<UserForLoginConfirmationDto>(sqlUserCheck);
+
+            if (userForLoginConfirmationdto.Count() != 0)
+            {
+                var User = userForLoginConfirmationdto.First();
+                byte[] passwordHash = GetPasswordHash(userForLogin.Password, User.PasswordSalt);
+
+                for (int i = 0; i < passwordHash.Length; i++)
+                {
+                    if (passwordHash[i] != User.PasswordHash[i])
+                    {
+                        return StatusCode(401, "Unauthorized my g");
+                    }
+                }
+                return Ok();
+            }
+            throw new Exception("User Doesn't Exist!");
         }
 
         private byte[] GetPasswordHash(string password, byte[] passwordSalt)
