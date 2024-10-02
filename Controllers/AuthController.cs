@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +12,7 @@ using DotnetAPI.DTOs;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DotnetAPI.Controllers
 {
@@ -126,7 +129,18 @@ namespace DotnetAPI.Controllers
                         return StatusCode(401, "Unauthorized my g");
                     }
                 }
-                return Ok();
+
+                string sqlGetUserId =
+                    @$"SELECT UserId FROM TutorialAppSchema.Users WHERE Email = '{userForLogin.Email}'";
+
+                int userId = _dapper.LoadDataSingle<int>(sqlGetUserId);
+
+                Dictionary<string, string> responseDic = new Dictionary<string, string>()
+                {
+                    { "token", GenerateToken(userId) },
+                };
+
+                return Ok(responseDic);
             }
             throw new Exception("User Doesn't Exist!");
         }
@@ -144,6 +158,34 @@ namespace DotnetAPI.Controllers
                 iterationCount: 1000000,
                 numBytesRequested: 256 / 8
             );
+        }
+
+        private string GenerateToken(int UserId)
+        {
+            Claim[] claims = new Claim[] { new Claim("userId", UserId.ToString()) };
+
+            string? tokenKeyString = _configuration.GetSection("AppSettings:TokenKey").Value;
+
+            SymmetricSecurityKey tokenKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(tokenKeyString != null ? tokenKeyString : "")
+            );
+
+            SigningCredentials creds = new SigningCredentials(
+                tokenKey,
+                SecurityAlgorithms.HmacSha256Signature
+            );
+
+            SecurityTokenDescriptor descriptor = new SecurityTokenDescriptor()
+            {
+                Subject = new ClaimsIdentity(claims),
+                SigningCredentials = creds,
+                Expires = DateTime.Now.AddDays(1),
+            };
+
+            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+
+            SecurityToken token = tokenHandler.CreateToken(descriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
 }
