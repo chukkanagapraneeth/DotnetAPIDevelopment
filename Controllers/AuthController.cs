@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DotnetAPI.Data;
 using DotnetAPI.DTOs;
+using DotnetAPI.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
@@ -25,10 +26,13 @@ namespace DotnetAPI.Controllers
         private IConfiguration _configuration;
         private readonly DataContextDapper _dapper;
 
+        private readonly AuthHelper _authHelper;
+
         public AuthController(IConfiguration configuration)
         {
             _configuration = configuration;
             _dapper = new DataContextDapper(configuration);
+            _authHelper = new AuthHelper(configuration);
         }
 
         [AllowAnonymous]
@@ -52,7 +56,7 @@ namespace DotnetAPI.Controllers
                     }
                     ;
 
-                    byte[] passwordHash = GetPasswordHash(
+                    byte[] passwordHash = _authHelper.GetPasswordHash(
                         userForRegistration.Password,
                         passwordSalt
                     );
@@ -124,7 +128,10 @@ namespace DotnetAPI.Controllers
             if (userForLoginConfirmationdto.Count() != 0)
             {
                 var User = userForLoginConfirmationdto.First();
-                byte[] passwordHash = GetPasswordHash(userForLogin.Password, User.PasswordSalt);
+                byte[] passwordHash = _authHelper.GetPasswordHash(
+                    userForLogin.Password,
+                    User.PasswordSalt
+                );
 
                 for (int i = 0; i < passwordHash.Length; i++)
                 {
@@ -141,7 +148,7 @@ namespace DotnetAPI.Controllers
 
                 Dictionary<string, string> responseDic = new Dictionary<string, string>()
                 {
-                    { "token", GenerateToken(userId) },
+                    { "token", _authHelper.GenerateToken(userId) },
                 };
 
                 return Ok(responseDic);
@@ -161,53 +168,10 @@ namespace DotnetAPI.Controllers
 
             Dictionary<string, string> responseDic = new Dictionary<string, string>()
             {
-                { "token", GenerateToken(userIdFromDb) },
+                { "token", _authHelper.GenerateToken(userIdFromDb) },
             };
 
             return Ok(responseDic);
-        }
-
-        private byte[] GetPasswordHash(string password, byte[] passwordSalt)
-        {
-            string passwordSaltPlusString =
-                _configuration.GetSection("AppSettings:PasswordKey").Value
-                + Convert.ToBase64String(passwordSalt);
-
-            return KeyDerivation.Pbkdf2(
-                password: password,
-                salt: Encoding.ASCII.GetBytes(passwordSaltPlusString),
-                prf: KeyDerivationPrf.HMACSHA256,
-                iterationCount: 1000000,
-                numBytesRequested: 256 / 8
-            );
-        }
-
-        private string GenerateToken(int UserId)
-        {
-            Claim[] claims = new Claim[] { new Claim("userId", UserId.ToString()) };
-
-            string? tokenKeyString = _configuration.GetSection("AppSettings:TokenKey").Value;
-
-            SymmetricSecurityKey tokenKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(tokenKeyString != null ? tokenKeyString : "")
-            );
-
-            SigningCredentials creds = new SigningCredentials(
-                tokenKey,
-                SecurityAlgorithms.HmacSha256Signature
-            );
-
-            SecurityTokenDescriptor descriptor = new SecurityTokenDescriptor()
-            {
-                Subject = new ClaimsIdentity(claims),
-                SigningCredentials = creds,
-                Expires = DateTime.Now.AddDays(1),
-            };
-
-            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
-
-            SecurityToken token = tokenHandler.CreateToken(descriptor);
-            return tokenHandler.WriteToken(token);
         }
     }
 }
