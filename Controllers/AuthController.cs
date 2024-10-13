@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DotnetAPI.Data;
 using DotnetAPI.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -16,6 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace DotnetAPI.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
@@ -29,6 +31,7 @@ namespace DotnetAPI.Controllers
             _dapper = new DataContextDapper(configuration);
         }
 
+        [AllowAnonymous]
         [HttpPost("Register")]
         public IActionResult Register(UserForRegistrationDto userForRegistration)
         {
@@ -107,6 +110,7 @@ namespace DotnetAPI.Controllers
             throw new Exception("Passwords Do Not Match!");
         }
 
+        [AllowAnonymous]
         [HttpPost("Login")]
         public IActionResult Login(UserForLoginDto userForLogin)
         {
@@ -143,6 +147,24 @@ namespace DotnetAPI.Controllers
                 return Ok(responseDic);
             }
             throw new Exception("User Doesn't Exist!");
+        }
+
+        [HttpGet("RefreshToken")]
+        public IActionResult RefreshToken()
+        {
+            string userId = User.FindFirst("userId")?.Value + "";
+
+            string userIdSql =
+                @$"SELECT UserId FROM TutorialAppSchema.Users WHERE UserId = {userId}";
+
+            int userIdFromDb = _dapper.LoadDataSingle<int>(userIdSql);
+
+            Dictionary<string, string> responseDic = new Dictionary<string, string>()
+            {
+                { "token", GenerateToken(userIdFromDb) },
+            };
+
+            return Ok(responseDic);
         }
 
         private byte[] GetPasswordHash(string password, byte[] passwordSalt)
