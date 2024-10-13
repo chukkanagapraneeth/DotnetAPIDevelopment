@@ -23,14 +23,11 @@ namespace DotnetAPI.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private IConfiguration _configuration;
         private readonly DataContextDapper _dapper;
-
         private readonly AuthHelper _authHelper;
 
         public AuthController(IConfiguration configuration)
         {
-            _configuration = configuration;
             _dapper = new DataContextDapper(configuration);
             _authHelper = new AuthHelper(configuration);
         }
